@@ -1,0 +1,17 @@
+# eventix_to_exact
+
+needs a "setting.json with the following data:
+
+{
+    "journal": "{your journal account}",
+    "gbrkticket": "{your ledger account for tickets}",
+    "gbrkservice": "{your ledger account for your service costs}",
+    "gbrkservpay": "{your ledger account for service cost Eventix/paymentprovider}",
+    "gbrkincome": "{your suspense account for tickets}",
+    "gbrkbtw_low": "{your ledger account for low % vat}",
+    "btw_low_code": "{your btw code for low vat including vat}",
+    "btw_low_code_excl": "{your btw code for low vat excl vat}",
+    "gbrkbtw_zero": "{your ledger account for zero % vat}",
+    "btw_zero_code": "{your btw code for zero % vat}",
+    "vat_low_perc": 0.09 # amount of low vat   
+}
