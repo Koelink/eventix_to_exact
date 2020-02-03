@@ -10,5 +10,5 @@
     "btw_low_code_excl": "{your btw code for low vat excl vat}",
     "gbrkbtw_zero": "{your ledger account for zero % vat}",
     "btw_zero_code": "{your btw code for zero % vat}",
-    "vat_low_perc": 0.09 # amount of low vat   
+    "vat_low_perc": 0.09
 }
