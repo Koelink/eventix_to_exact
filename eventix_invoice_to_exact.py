@@ -103,9 +103,7 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory, invoic
         ticket_dict = {  #for ticket for event
             "GLAccount": settings["gbrkticket"],
             "Description":f'week {weeknr}-ticket-{row["description"][:17]}-202{row["cost_center"][:5]}-{row["sold_tickets"]}-{row["ticketsoort"][:8]}', 
-            #"VATCode": settings["btw_low_code_excl"],
-            "VATCode": settings["btw_zero_code"], ############## DEZE VERWIJDEREN
-            #"AmountVATFC": tickets_total_vat * -1,
+            "VATCode": settings["btw_zero_code"], 
             "CostCenter": row["cost_center"],
             "AmountFC": ticket_dict_val
             }
@@ -114,9 +112,7 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory, invoic
         service_dict = {  #for servicecost for event
             "GLAccount": settings["gbrkservice"],
             "Description":f'week {weeknr}-serv-{row["description"][:17]}-202{row["cost_center"][:5]}-{row["sold_tickets"]}-{row["ticketsoort"][:8]}', 
-            #"VATCode": settings["btw_low_code_excl"],
-            "VATCode": settings["btw_zero_code"], ############## DEZE VERWIJDEREN
-            #"AmountVATFC": serv_total_vat * -1,
+            "VATCode": settings["btw_zero_code"]
             "CostCenter": row["cost_center"],
             "AmountFC": round((serv_total - serv_total_vat), 2)
             }
@@ -136,6 +132,7 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory, invoic
 
 
     ##### PAYMENTPROVIDERS
+    """
     paymenta = {
             "GLAccount": settings["gbrkservice"],
             "VATCode": settings["btw_zero_code"],
@@ -143,7 +140,7 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory, invoic
             "AmountFC": round(float(paymentcosts) * -1, 2)
             }
     
-    #exact_dict.append(paymenta)
+    exact_dict.append(paymenta)
 
     paymenta_vat = {
             "GLAccount": settings["gbrkbtw_zero"],
@@ -152,8 +149,8 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory, invoic
             "AmountFC": round(0, 2)
             }
 
-    #exact_dict.append(paymenta_vat)
-
+    exact_dict.append(paymenta_vat)
+    """
     paymentb = {
             "GLAccount": settings["gbrkservpay"],
             "VATCode": settings["btw_zero_code"],
