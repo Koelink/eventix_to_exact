@@ -112,7 +112,7 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory, invoic
         service_dict = {  #for servicecost for event
             "GLAccount": settings["gbrkservice"],
             "Description":f'week {weeknr}-serv-{row["description"][:17]}-202{row["cost_center"][:5]}-{row["sold_tickets"]}-{row["ticketsoort"][:8]}', 
-            "VATCode": settings["btw_zero_code"]
+            "VATCode": settings["btw_zero_code"],
             "CostCenter": row["cost_center"],
             "AmountFC": round((serv_total - serv_total_vat), 2)
             }
