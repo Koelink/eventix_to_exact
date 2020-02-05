@@ -21,6 +21,26 @@ def get_entry_date(weeknr, year):
     return r
 
 
+def get_files():
+    path = os.getcwd()
+    files = []
+    files_dict = []
+    for file in os.listdir(path):
+        if file.endswith(".pdf") or file.endswith(".PDF"):
+            files.append(file)
+    for i in files:
+        try:
+            weeknr = str(datetime.strptime(i[:10], "%Y-%m-%d").isocalendar()[1] -1)
+            year = i[:4]
+            invoice = i.split()[1]
+            if len(weeknr) == 1:
+                weeknr = f"0{weeknr}"
+            files_dict.append({"filename":i, "weeknr": weeknr, "year": year, "invoice": invoice})
+        except:
+            pass
+    return files_dict
+
+
 def get_cost_center(description):
     if description.count("(") > 1:
         description = description.replace("(", "", description.count("(") - 1)
@@ -54,7 +74,7 @@ def clean_df(df, df_sort=""):
     return df
 
 
-def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory): 
+def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory, invoice): 
     settings = get_settings()
     exact_dict = []
     tickets_total = df["tickets_total"].sum()
@@ -66,8 +86,8 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory):
             "Boekdatum": entry_date, 
             "GLAccount": settings["gbrkincome"],
             "VATCode": settings["btw_zero_code"],
-            "Description":f'week {weeknr} ticket en servicekosten', 
-            "AmountFC": round(float(tickets_total + servicefee_total) * -1, 2)
+            "Description":f'week {weeknr} ticket en servicekosten - {invoice}', 
+            "AmountFC": round(float(tickets_total + servicefee_total + paymentcosts) * -1, 2)
             }
     exact_dict.append(ticketstotal)
         
@@ -82,9 +102,10 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory):
 
         ticket_dict = {  #for ticket for event
             "GLAccount": settings["gbrkticket"],
-            "Description":f'week {weeknr} ticket {row["description"][:20]} 202{row["cost_center"][:5]} {row["ticketsoort"][:8]}', 
-            "VATCode": settings["btw_low_code_excl"],
-            "AmountVATFC": tickets_total_vat * -1,
+            "Description":f'week {weeknr}-ticket-{row["description"][:17]}-202{row["cost_center"][:5]}-{row["sold_tickets"]}-{row["ticketsoort"][:8]}', 
+            #"VATCode": settings["btw_low_code_excl"],
+            "VATCode": settings["btw_zero_code"], ############## DEZE VERWIJDEREN
+            #"AmountVATFC": tickets_total_vat * -1,
             "CostCenter": row["cost_center"],
             "AmountFC": ticket_dict_val
             }
@@ -92,9 +113,10 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory):
         
         service_dict = {  #for servicecost for event
             "GLAccount": settings["gbrkservice"],
-            "Description":f'week {weeknr} serv {row["description"][:20]} 202{row["cost_center"][:5]} {row["ticketsoort"][:8]}', 
-            "VATCode": settings["btw_low_code_excl"],
-            "AmountVATFC": serv_total_vat * -1,
+            "Description":f'week {weeknr}-serv-{row["description"][:17]}-202{row["cost_center"][:5]}-{row["sold_tickets"]}-{row["ticketsoort"][:8]}', 
+            #"VATCode": settings["btw_low_code_excl"],
+            "VATCode": settings["btw_zero_code"], ############## DEZE VERWIJDEREN
+            #"AmountVATFC": serv_total_vat * -1,
             "CostCenter": row["cost_center"],
             "AmountFC": round((serv_total - serv_total_vat), 2)
             }
@@ -121,7 +143,7 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory):
             "AmountFC": round(float(paymentcosts) * -1, 2)
             }
     
-    exact_dict.append(paymenta)
+    #exact_dict.append(paymenta)
 
     paymenta_vat = {
             "GLAccount": settings["gbrkbtw_zero"],
@@ -130,7 +152,7 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory):
             "AmountFC": round(0, 2)
             }
 
-    exact_dict.append(paymenta_vat)
+    #exact_dict.append(paymenta_vat)
 
     paymentb = {
             "GLAccount": settings["gbrkservpay"],
@@ -171,38 +193,42 @@ def make_exact_csv(df, entry_date, weeknr, year, paymentcosts, directory):
 
     
 def main():
-    weeknr = "05"
-    year = "2020"
-    entry_date = get_entry_date(weeknr, year)
-    directory = f"data/{year}/{year}-{weeknr}/"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    file_path = f"clearing {weeknr}-{year}.pdf" #file to look up
+    files = get_files()
+    for i in files:
+        filename = i["filename"]
+        weeknr = i["weeknr"]
+        year = i["year"]
+        invoice = i["invoice"]
+        print(filename, weeknr, year)
 
+        entry_date = get_entry_date(weeknr, year)
+        directory = f"data/{year}/{year}-{weeknr}/"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-    df = tabula.read_pdf(file_path, pages="all", multiple_tables=False) #makes a list of dataframes from the pdf
-    df = df[0] #takes the first df in the list of dfs
-    df = df.rename(columns={"Product": "ticketsoort", "Description": "description", "Amount": "sold_tickets", "Price/Product": "ticket_price", "Product Total": "tickets_total", "Kickback": "servicefee_ticket", "Kickbacks Total": "servicefee_total", "Total": "total"})
+        df = tabula.read_pdf(filename, pages="all", multiple_tables=False) #makes a list of dataframes from the pdf
+        df = df[0] #takes the first df in the list of dfs
+        df = df.rename(columns={"Product": "ticketsoort", "Description": "description", "Amount": "sold_tickets", "Price/Product": "ticket_price", "Product Total": "tickets_total", "Kickback": "servicefee_ticket", "Kickbacks Total": "servicefee_total", "Total": "total"})
 
-    costs_df = df.loc[df.ticketsoort.isin(["PayPal", "Podiumcadeaukaart", "CreditCard", "Bancontact"])]
-    tickets_df = df.loc[df.ticketsoort.str.startswith("Ticket")].reset_index(drop=True) #only gets the products that starts with the word ticket
+        costs_df = df.loc[df.ticketsoort.isin(["PayPal", "Podiumcadeaukaart", "CreditCard", "Bancontact"])]
+        tickets_df = df.loc[df.ticketsoort.str.startswith("Ticket")].reset_index(drop=True) #only gets the products that starts with the word ticket
+
+        tickets_df = clean_df(tickets_df, "ticket")
+        costs_df = clean_df(costs_df)
     
-    tickets_df = clean_df(tickets_df, "ticket")
-    costs_df = clean_df(costs_df)
-   
-    print(costs_df)
-    print(tickets_df)
-    total_tickets = round(tickets_df["total"].sum(), 2)
-    total_costs = round(costs_df["total"].sum(), 2)
-    total = total_tickets + total_costs
+        print(costs_df)
+        print(tickets_df)
+        total_tickets = round(tickets_df["total"].sum(), 2)
+        total_costs = round(costs_df["total"].sum(), 2)
+        total = total_tickets + total_costs
 
-    print("Ticketverkoop:", total_tickets)
-    print("Servicekosten:", total_costs)
-    print("Totaal:", total)
+        print("Ticketverkoop:", total_tickets)
+        print("Servicekosten:", total_costs)
+        print("Totaal:", total)
 
-    tickets_df.to_csv(f"{directory}tickets {weeknr}-{year}_df.csv")
-    make_exact_csv(tickets_df, entry_date, weeknr, year, total_costs, directory)
-    shutil.move(file_path, f"{directory}{file_path}")
+        tickets_df.to_csv(f"{directory}tickets {weeknr}-{year}_df.csv")
+        make_exact_csv(tickets_df, entry_date, weeknr, year, total_costs, directory, invoice)
+        shutil.move(filename, f"{directory}{filename}")
 
 
 if __name__ == "__main__":
